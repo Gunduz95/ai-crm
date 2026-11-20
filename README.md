@@ -1,5 +1,7 @@
 # CRM – Companies & Email Campaigns
 
+![tests](https://github.com/Gunduz95/ai-crm/actions/workflows/tests.yml/badge.svg)
+
 A small B2B CRM: keep a list of companies, create email campaigns, add companies as recipients and mark campaigns as sent.
 Backend is a Django REST API with JWT login; frontend is Next.js + TypeScript.
 
@@ -52,6 +54,15 @@ cd frontend
 npm install
 npm run dev
 ```
+
+## Tests
+
+```bash
+cd backend
+python manage.py test      # 13 API tests: auth, companies CRUD, campaigns, recipients
+```
+
+GitHub Actions runs the backend tests and a TypeScript type check of the frontend on every push.
 
 ## Configuration
 

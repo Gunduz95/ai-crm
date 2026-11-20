@@ -14,6 +14,12 @@ class SignUpView(APIView):
         password = request.data.get('password')
         email = request.data.get('email', '')
 
+        if not username or not password:
+            return Response(
+                {'error': 'Username and password are required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         if User.objects.filter(username=username).exists():
             return Response(
                 {'error': 'Username already exists'},
