@@ -10,23 +10,44 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 from datetime import timedelta
+
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
+def _load_env_file(path):
+    """Read KEY=VALUE lines from backend/.env (if it exists) into os.environ."""
+    if not path.exists():
+        return
+    for line in path.read_text(encoding='utf-8').splitlines():
+        line = line.strip()
+        if not line or line.startswith('#') or '=' not in line:
+            continue
+        key, value = line.split('=', 1)
+        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-_er$q8umepidd_pbq%2gh#9nqjs3teg$*4#(91+7^#@)l*&$xt'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+_load_env_file(BASE_DIR / '.env')
 
-ALLOWED_HOSTS = []
+
+def _env_list(name, default):
+    return [item.strip() for item in os.environ.get(name, default).split(',') if item.strip()]
+
+
+# Secrets and environment-specific values come from environment variables
+# (or backend/.env, see .env.example). Nothing secret is stored in git.
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+if not SECRET_KEY:
+    raise ImproperlyConfigured('Set DJANGO_SECRET_KEY (copy backend/.env.example to backend/.env).')
+
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False').lower() == 'true'
+
+ALLOWED_HOSTS = _env_list('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1')
 
 
 # Application definition
@@ -123,8 +144,8 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # --- CORS ---
-# Allow Next.js (port 3000) to call Django (port 8000)
-CORS_ALLOW_ALL_ORIGINS = True
+# Only the Next.js frontend (port 3000 by default) may call the API
+CORS_ALLOWED_ORIGINS = _env_list('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000')
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
